@@ -11,14 +11,20 @@ namespace Lab5
 {
     class Program
     {
+        #region main
         static void Main(string[] args)
         {
+            //Create a document statistics object and then process input files and then write stats as json.
             DocumentStatistics statistics = new DocumentStatistics();
             string filepath = @"..\..\Documents";
             ProcessFiles(filepath, statistics);
-            //SerializeStats(filepath, statistics);
+            SerializeStats(filepath, statistics);
+            Console.WriteLine("Press any key to Exit...");
             Console.ReadLine();
         }
+        #endregion
+
+        #region methods
         private static void ProcessFiles(string filepath, DocumentStatistics stats)
         {
             string[] files = Directory.GetFiles(filepath);
@@ -30,54 +36,91 @@ namespace Lab5
 
                 stats.Documents.Add(file);
                 stats.DocumentCount = stats.DocumentCount + 1;
-
-                using (StreamReader sr = File.OpenText(file))
+                try
                 {
-                    string input = null;
-                    input = sr.ReadLine();
-                    string[] words = Regex.Split(input, @"\s");//s+
-                    
-                    for (int i = 0; i < words.Length; i++)
+                    using (StreamReader sr = File.OpenText(file))
                     {
+                        string input = null;
+                        input = sr.ReadLine();
+                        string[] words = Regex.Split(input, @"\s");//s+
+
+                        for (int i = 0; i < words.Length; i++)
+                        {
+                            string temp = null;
+
+                            //remove caps
+                            temp = Regex.Replace(words[i], @"\w+", m => " " + m.ToString().ToLower());
+                            words[i] = temp;
+                            temp = Regex.Replace(words[i], @"\s+", "");
+                            words[i] = temp;
+
+                            //remove other rando's if they exist
+                            if (words[i].Contains("("))
+                            {
+                                temp = Regex.Replace(words[i], @"\(", "");
+                                words[i] = temp;
+                            }
+                            if (words[i].Contains(")"))
+                            {
+                                temp = Regex.Replace(words[i], @"\)", "");
+                                words[i] = temp;
+                            }
+                            if (words[i].Contains(":"))
+                            {
+                                temp = Regex.Replace(words[i], @"\:", "");
+                                words[i] = temp;
+                            }
+                            if (words[i].Contains("."))
+                            {
+                                temp = Regex.Replace(words[i], @"\.", "");
+                                words[i] = temp;
+                            }
+                            if (words[i].Contains(","))
+                            {
+                                temp = Regex.Replace(words[i], @"\,", "");
+                                words[i] = temp;
+                            }
+
                             //update stats.wordcount dictionary
                             if (stats.WordCounts.ContainsKey(words[i]))
-                        {
-                            int counter = stats.WordCounts[words[i]];
-                            stats.WordCounts[words[i]] = counter + 1;
-                        }
-                        else
-                        {
-                            stats.WordCounts.Add(words[i], 1);
+                            {
+                                int counter = stats.WordCounts[words[i]];
+                                stats.WordCounts[words[i]] = counter + 1;
+                            }
+                            else
+                            {
+                                stats.WordCounts.Add(words[i], 1);
+                            }
                         }
                     }
                 }
+                catch 
+                {
+                    Console.WriteLine("You were not able to read the input files");
+                }               
             }
         }
-        
+
         private static void SerializeStats(string filepath, DocumentStatistics stats)
         {
-            using (var stm = new FileStream(filepath + "\\stats.json", FileMode.CreateNew))
+            try
             {
-                //var settings = new DataContractJsonSerializerSettings();
-                var serializer = new DataContractJsonSerializer(typeof(DocumentStatistics));
-                serializer.WriteObject(stm, stats);
-
-            }
-                //stats = serializer.ReadObject(stm) as DocumentStatistics;
-
-                /*
-                using (var stm = new FileStream("stats", FileMode.CreateNew))
+                using (var stm = new FileStream(filepath + "\\stats.json", FileMode.CreateNew))
                 {
-                    var settings = new DataContractJsonSerializerSettings();
-                    var serializer = new DataContractJsonSerializer(typeof(DocumentStatistics), settings);
-                        stats = serializer.ReadObject(stm) as DocumentStatistics;
+                    //var settings = new DataContractJsonSerializerSettings();
+                    var serializer = new DataContractJsonSerializer(typeof(DocumentStatistics));
+                    serializer.WriteObject(stm, stats);
                 }
-                 if (stats != null)
-                {
-                    foreach ()
-                */
+               
             }
-        
+
+            catch 
+            {
+                Console.WriteLine("You were not able to create a new file in the target directory");
+                
+            }
+        }
+        #endregion
     }
    
 }
